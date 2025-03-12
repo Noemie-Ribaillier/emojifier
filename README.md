@@ -63,9 +63,9 @@ We get a not too bad accuracy on the test set (even for a very small training se
 
 ### Recurrent Neural Network (RNN)
 Traditional neural networks can't handle sequences. RNN address this issue, they handle very well sequences, they are networks with loops in them, allowing information to persist. RNN remember the previous information and use it for processing the current input. RNN model:
-* at time 0: X_0 gives H_0
-* at time 1: X_1 and H_0 gives X_1
-* at time t: X_t and H_t-1 gives H_t
+* at time 0: x_0 gives h_0
+* at time 1: x_1 and H_0 gives x_1
+* at time t: x_t and h_t-1 gives h_t
 The network is influenced at time t by the input it receives and by what happened before.
 
 
@@ -113,56 +113,56 @@ The 3 gates are used to create selector vectors (with values between 0 and 1, ne
 
 The LSTM has the following inputs and outputs:
 * inputs: 
-    * vector cell state at time t-1 (C_t-1) representing the long term memory
-    * vector hidden state at time t-1 (H_t-1) representing the short term memory
-    * vector X at time t (X_t) representing the new input
+    * vector cell state at time t-1 (c_t-1) representing the long term memory
+    * vector hidden state at time t-1 (h_t-1) representing the short term memory
+    * vector X at time t (x_t) representing the new input
 * outputs: 
-    * hidden state for time t+1 (H_t+1): it uses long term memory (cell state C) to update the short term memory (hidden state H)
-    * cell state for time t+1 (C_t+1): it uses recent past information (hidden state H) and new information coming from outside (input vector X) to update the long term memory (cell state C)
+    * hidden state for time t+1 (h_t+1): it uses long term memory (cell state c) to update the short term memory (hidden state h)
+    * cell state for time t+1 (c_t+1): it uses recent past information (hidden state H) and new information coming from outside (input vector x) to update the long term memory (cell state c)
 
 Dimensions of the cell state and the hidden state are the same and determined by the number of LSTM units.
 
 #### Step by step
 
 ##### Forget gate
-Goal: based on the inputs, what information should be removed from the cell state vector coming from time t-1 (C_t-1)
-Inputs: X_t and H_t-1
-Formula: f_t = sigma(W_f*[H_t-1, X_t] + b_f) wit W_f the weights that connect both the previous hidden state (H_t-1) and the current input (X_t) to the forget gate
-Output: a selector vector, of length C_t-1, with values between 0 and 1 because the activation function use the sigmoid function. 
-Later, the selector vector is multiplied element-wise with the cell state vector (C_t-1) received as input, so:
+Goal: based on the inputs, what information should be removed from the cell state vector coming from time t-1 (c_t-1)
+Inputs: x_t and h_t-1
+Formula: f_t = sigma(W_f*[h_t-1, x_t] + b_f) wit W_f the weights that connect both the previous hidden state (h_t-1) and the current input (x_t) to the forget gate
+Output: a selector vector, of length c_t-1, with values between 0 and 1 because the activation function use the sigmoid function. 
+Later, the selector vector is multiplied element-wise with the cell state vector (c_t-1) received as input, so:
 * a position where the selector vector has a value 0 completely eliminates the information included in the same position in the cell state ("forget it") 
 * a position where the selector vector has a value 1 leaves unchanged the information included in the same position in the cell state ("keep it").
 
 ##### Input gate
-Goal: based on the inputs, how much of the new candidate memory (C_tilde_t) should be allowed to modify the cell state
-Inputs: X_t and H_t-1
-Formula: i_t = sigma(W_i*[H_t-1, X_t] + b_i)
-Output: a selector vector of length C_t-1, with values between 0 and 1 because the activation function use the sigmoid function. 
+Goal: based on the inputs, how much of the new candidate memory (c_tilde_t) should be allowed to modify the cell state
+Inputs: x_t and h_t-1
+Formula: i_t = sigma(W_i*[h_t-1, x_t] + b_i)
+Output: a selector vector of length c_t-1, with values between 0 and 1 because the activation function use the sigmoid function. 
 
 ##### Candidate memory cell
 Goal: based on the inputs, it creates a candidate vector of new candidates that could be added to the cell state
-Inputs: X_t and H_t-1
-Formula: C_tilde_t = tanh(W_c*[H_t-1, X_t] + b_c)
-Output: a candidate vector of length C_t-1, with values between -1 and 1 because the tanh function is used as activation function. Tanh is a smooth function that normalizes values between -1 and 1 and behave like a linear function for small values so it makes the model more stable.
+Inputs: x_t and h_t-1
+Formula: c_tilde_t = tanh(W_c*[h_t-1, x_t] + b_c)
+Output: a candidate vector of length c_t-1, with values between -1 and 1 because the tanh function is used as activation function. Tanh is a smooth function that normalizes values between -1 and 1 and behave like a linear function for small values so it makes the model more stable.
 
 Later, the selector vector (from input gate) and the candidate vector (from candidate memory cell) are multiplied with each other, element wise. This means that:
 * a position where the selector vector has a value equal to 0 completely eliminates the information included in the same position in the candidate vector
 * a position where the selector vecor has a value equal to 1 leaves unchanged the information included in the same position in the candidate vector 
 
 Later, the result of the multiplication between the candidate vector and the selector vector is added to the cell state vector, this adds new information to the cell state (after some information has been removed by the forget gate).
-Formula: C_t = f_t * C_t-1 + i_t * C_tilde_t
+Formula: c_t = f_t * c_t-1 + i_t * c_tilde_t
 * f_t affects how much the previous state should influence the current state
-* candidate memory cell (C_tilde_t): can have both positive and negative values. A negative value for the candidate memory cell means that the LSTM wants to decrease certain parts of the cell state, but it does so after the forget gate has determined how much of the previous cell state should be retained, and after it's been controlled by the input gate (which determines how much of it should be stored).
+* candidate memory cell (c_tilde_t): can have both positive and negative values. A negative value for the candidate memory cell means that the LSTM wants to decrease certain parts of the cell state, but it does so after the forget gate has determined how much of the previous cell state should be retained, and after it's been controlled by the input gate (which determines how much of it should be stored).
 
 ##### Output gate
-Goal: based on the inputs, it determines the value of the hidden state outputted by the LSTM at time t (output, H_t) and received by the LSTM at time t+1 (input, H_t+1).
-Inputs: X_t and H_t-1
-Formula: o_t = sigma(W_o*[H_t-1, X_t] + b_o)
-Output: a selector vector, of length C_t-1, with values between 0 and 1 because the activation function use the sigmoid function. 
+Goal: based on the inputs, it determines the value of the hidden state outputted by the LSTM at time t (output, h_t) and received by the LSTM at time t+1 (input, h_t+1).
+Inputs: x_t and h_t-1
+Formula: o_t = sigma(W_o*[h_t-1, x_t] + b_o)
+Output: a selector vector, of length c_t-1, with values between 0 and 1 because the activation function use the sigmoid function. 
 
-Later, the selector vector is multiplied to the candidate vector (tanh(C_t)). The tanh gives values between -1 and 1, to make it possible to control the stability of the network over time. 
+Later, the selector vector is multiplied to the candidate vector (tanh(c_t)). The tanh gives values between -1 and 1, to make it possible to control the stability of the network over time. 
 A position where the selector vector has a value equal to 0 completely eliminates the information included in the same position in the candidate vector. A position where the selector vector has a value equal to 1 leaves unchanged the information included in the same position in the candidate vector.
-Formula: H_t = o_t * tanh(C_t), so hidden state is a function of long term memory (C_t) and the current output.
+Formula: h_t = o_t * tanh(c_t), so hidden state is a function of long term memory (c_t) and the current output.
 
 ##### LSTM solves vanishing and exploding gradients
 Vanishing and exploding gradients are common issues while training RNNs. It comes from the way gradients are propagated through the layers of the network during backpropagation.
