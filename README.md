@@ -182,4 +182,4 @@ This model succeeds in getting the "I'm not happy" that simple NN model didn't g
 
 
 ## References
-This script is coming from the Deep Learning Specialization course. I enriched it to tis new version.
+This script is coming from the Deep Learning Specialization course. I enriched it to this new version.
